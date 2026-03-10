@@ -9,10 +9,8 @@ from hybrid_search import hybrid_search
 # ==========================================
 # We only need the heavy hitter now. Dropped temperature to 0.1 for strict factual extraction.
 generator_llm = ChatOllama(
-    model="phi3.5", 
+    model="qwen2.5:0.5b", 
     temperature=0.1,
-    # THE FIX: Restrict threads to stop CPU contention
-    num_thread=8,
     # THE FIX: Hard-cap the context window so it never bloats memory
     num_ctx=2048 
 )
@@ -53,7 +51,7 @@ def fast_rag_pipeline(query: str, k_docs: int = 4):
     print(f"\n[1/2] Executing Hybrid Retrieval for: '{query}'...")
     
     # THE FIX: Slice the fused array so we don't nuke the CPU's memory bandwidth
-    docs = hybrid_search(query, k=k_docs)[:3] 
+    docs = hybrid_search(query, k=k_docs)[:2] 
     
     if not docs:
         return "I do not have enough information in the current documentation to answer that fully. Could you provide more detail or ask about another specific module?"
@@ -61,7 +59,7 @@ def fast_rag_pipeline(query: str, k_docs: int = 4):
     context = "\n\n---\n\n".join([doc.page_content for doc in docs])
     
     # 2. Single-Pass Generation
-    print(f"[2/2] Synthesizing Answer with phi3.5:latest...")
+    print(f"[2/2] Synthesizing Answer with qwen2.5:0.5b...")
     prompt = PromptTemplate(template=PROMPT_TEMPLATE, input_variables=["question", "context"])
     chain = prompt | generator_llm | StrOutputParser()
     

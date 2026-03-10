@@ -8,32 +8,40 @@ from hybrid_search import hybrid_search
 # 1. Initialize the Generator
 # ==========================================
 # We only need the heavy hitter now. Dropped temperature to 0.1 for strict factual extraction.
-generator_llm = ChatOllama(model="phi3.5:latest", temperature=0.1)
+generator_llm = ChatOllama(
+    model="phi3.5", 
+    temperature=0.1,
+    # THE FIX: Restrict threads to stop CPU contention
+    num_thread=8,
+    # THE FIX: Hard-cap the context window so it never bloats memory
+    num_ctx=2048 
+)
 
 # ==========================================
 # 2. The Anti-Boilerplate Prompt
 # ==========================================
-PROMPT_TEMPLATE = """You are AxIn Help: a technical knowledge assistant for AxIn.
+PROMPT_TEMPLATE = """You are AxIn Help, the expert technical knowledge assistant for AxIn.
+Your ONLY source of knowledge is the provided Context. 
 
-Context:
+<context>
 {context}
+</context>
 
-Question: 
-{question}
+Question: {question}
 
-INSTRUCTIONS:
-First, carefully evaluate if the Context contains the actual answer to the Question. 
+STRICT EVALUATION PROTOCOL:
+First, determine if the provided Context explicitly contains the answer to the Question.
 
-CONDITION A - IF THE ANSWER IS NOT IN THE CONTEXT:
-Do not guess. Do not synthesize outside information. Do not output any bullet points. 
-You must output EXACTLY this string and nothing else:
-"I do not have enough information in the current documentation to answer that fully. Could you provide more detail or ask about another specific module?"
+IF THE ANSWER IS NOT IN THE CONTEXT:
+You are forbidden from guessing, inferring, or using outside knowledge. You MUST output EXACTLY the following string and nothing else. Stop generating immediately after this string:
+"I do not have enough information in the current documentation to answer that fully. Please provide more detail or ask about another specific module."
 
-CONDITION B - IF THE ANSWER IS IN THE CONTEXT:
-1. Start with a direct, natural introductory sentence that answers the core of the question.
-2. Use a clean markdown bulleted list to present the specific features, capabilities, or components found in the context.
-3. Conclude with a brief, natural thought that seamlessly transitions into a relevant follow-up question.
-4. Maintain a professional, fluid tone. Do not use rigid phrases like "The technical impact is".
+IF THE ANSWER IS IN THE CONTEXT:
+Format your response exactly following these structural rules. DO NOT number your paragraphs.
+- Start with a brief, friendly explanatory paragraph setting the context for your answer. Do NOT start this paragraph with a number. Do NOT use speculative words like "seems", "appears", or "likely". Be definitive and factual.
+- Structure the core of your answer using a clean markdown bulleted list. Break down complex information step-by-step.
+- Follow the bullet points with a brief concluding sentence summarizing the value of this information.
+- ALWAYS end with a highly relevant follow-up question to keep the conversation going. Do NOT use the word "could" in your follow-up question (e.g., use "Would you like me to explain...", "Do you need...").
 
 Answer:"""
 

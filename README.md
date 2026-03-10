@@ -65,9 +65,7 @@ The virtualization layer (Proxmox KVM) is hosted on an **AMD Opteron 6380** (Pil
 To adapt to this physical constraint while maintaining a local-only architecture, the project supports two operational modes depending on the deployment environment:
 
 1. **High-Fidelity Mode (Current):** Utilizing `phi3.5` or `llama3.1:8b`. This prioritizes strict instruction following and high-quality Markdown generation at the cost of high latency (~600s on legacy silicon).
-2. **High-Speed Edge Mode:** Swapping the generator to a sub-billion parameter model like `qwen2.5:0.5b`. This sacrifices some logical reasoning but massively reduces the memory bandwidth requirement, enabling near real-time REST API responses even on older scalar-bound CPUs.
-
-### Phase 2 Roadmap
+2. **High-Speed Edge Mode:** Swapping the generator to a sub-billion parameter model like `qwen2.5:0.5b`. This sacrifices some logical reasoning but massively reduces the memory bandwidth requirement, enabling near real-time REST API responses even on older scalar-bound CPUs.<br></br>
 Future iterations will migrate the virtualization stack to modern hardware supporting PCIe Passthrough, allowing a dedicated GPU to handle the matrix math and driving pipeline latency under 5 seconds.
 ---
 

@@ -1,0 +1,10 @@
+rag-env/
+venv/
+env/
+__pycache__/
+*.pyc
+qdrant_data/
+bm25_index.pkl
+docs/
+.vscode/
+.DS_Store

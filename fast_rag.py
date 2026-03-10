@@ -51,7 +51,7 @@ def fast_rag_pipeline(query: str, k_docs: int = 4):
     print(f"\n[1/2] Executing Hybrid Retrieval for: '{query}'...")
     
     # THE FIX: Slice the fused array so we don't nuke the CPU's memory bandwidth
-    docs = hybrid_search(query, k=k_docs)[:3] 
+    docs = hybrid_search(query, k=k_docs)[:2] 
     
     if not docs:
         return "I do not have enough information in the current documentation to answer that fully. Could you provide more detail or ask about another specific module?"
@@ -78,6 +78,34 @@ def fast_rag_pipeline(query: str, k_docs: int = 4):
     print("==========================================")
     
     return full_response
+
+def stream_rag_pipeline(query_text: str):
+    """
+    Executes the RAG pipeline and yields the answer token-by-token.
+    """
+    print(f"\n[1/2] Executing Hybrid Retrieval for: '{query_text}'...")
+    # 1. Retrieve the documents
+    docs = hybrid_search(query_text, k=4)[:2]
+    
+    if not docs:
+        yield "I do not have enough information in the current documentation to answer that fully. Please provide more detail or ask about another specific module."
+        return
+        
+    context_text = "\n\n".join([doc.page_content for doc in docs])
+    
+    print("[2/2] Streaming Answer from qwen2.5:0.5b...")
+    
+    # 2. Build the LangChain Prompt object (THE FIX)
+    prompt = PromptTemplate(template=PROMPT_TEMPLATE, input_variables=["question", "context"])
+    
+    # 3. Build the chain
+    chain = prompt | generator_llm 
+    
+    # 4. Stream the output token by token
+    for chunk in chain.stream({"context": context_text, "question": query_text}):
+        # chunk.content contains the raw string of the generated token
+        yield chunk.content
+
 
 if __name__ == "__main__":
     # Test the pipeline with the exact query that caused the loop

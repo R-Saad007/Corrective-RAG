@@ -51,7 +51,7 @@ def fast_rag_pipeline(query: str, k_docs: int = 4):
     print(f"\n[1/2] Executing Hybrid Retrieval for: '{query}'...")
     
     # THE FIX: Slice the fused array so we don't nuke the CPU's memory bandwidth
-    docs = hybrid_search(query, k=k_docs)[:2] 
+    docs = hybrid_search(query, k=k_docs)[:3] 
     
     if not docs:
         return "I do not have enough information in the current documentation to answer that fully. Could you provide more detail or ask about another specific module?"

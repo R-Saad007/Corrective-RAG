@@ -99,3 +99,28 @@ If you want to test the LangGraph state machine and watch the dual-model archite
 python agentic_rag.py
 ```
 *Note: This approach demonstrates advanced agentic logic but incurs a significant CPU latency penalty compared to the fast single-pass pipeline.*
+
+## 🔌 Layer 4: FastAPI Microservice & Streaming (SSE)
+
+To transition the RAG pipeline from a local script to a production-viable backend, the architecture exposes the inference engine via a high-performance **FastAPI** microservice served by **Uvicorn** (ASGI).
+
+### The Latency vs. UX Problem
+Given the hardware constraints of the AMD Opteron host (detailed above), standard synchronous JSON responses resulted in a 50–60 second blocking loader for the end user. This degrades the user experience and risks client-side timeouts.
+
+### The Streaming Solution
+To mitigate this, the primary endpoint was engineered to utilize **Server-Sent Events (SSE)**. Instead of waiting for the LLM to synthesize the entire response, the API yields a Python generator. This streams the output token-by-token back to the client the exact millisecond the CPU computes it.
+
+* **Metric Improvement:** While Total Pipeline Latency remains ~60 seconds, **Time to First Token (TTFT)** is reduced to **< 5 seconds**, drastically improving perceived performance.
+
+### API Endpoints
+
+| Method | Endpoint | Description | Payload |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/stream` | **(Primary)** Executes the RAG pipeline and returns a real-time byte stream of the generated answer. | `{"question": "string"}` |
+| `POST` | `/ask` | *(Legacy)* Executes the pipeline synchronously and returns a standard JSON block with total latency metrics. | `{"question": "string"}` |
+| `GET` | `/docs` | Auto-generated Swagger UI for interactive API exploration and testing. | N/A |
+
+### 🚀 Running the Server
+To launch the API in development mode with hot-reloading enabled:
+```bash
+uvicorn api:app --host 0.0.0.0 --port 8000 --reload

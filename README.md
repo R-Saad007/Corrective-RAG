@@ -51,6 +51,24 @@ To respect user latency budgets and deliver a snappy product interface, the pipe
 * **Phase 2 - Hardware Acceleration:** Future iterations will focus on PCIe Passthrough to expose a dedicated GPU to the virtualization layer, allowing the re-introduction of Cross-Encoders and asynchronous LangGraph edge routing to drive latency under 5 seconds.
 * **Phase 3 - API Integration:** Wrap the production pipeline into a FastAPI backend to serve as a RESTful endpoint for frontend product interfaces.
 
+## 🛠️ Latency Profiling (Root Cause Analysis)
+
+During the load testing of the pipeline, CPU-bound inference latency for models like `phi3.5` (3.8B) and `llama3.1:8b` averaged between 5 to 10 minutes per query. A deep-dive system profile revealed a critical hardware-level bottleneck restricting the inference engine.
+
+### The Missing AVX2 Instruction Set
+The virtualization layer (Proxmox KVM) is hosted on an **AMD Opteron 6380** (Piledriver architecture, c. 2012). While this processor provides a high core count, the physical silicon predates the **AVX2 (Advanced Vector Extensions 2)** instruction set. 
+
+* **The Technical Impact:** The underlying inference engine (`llama.cpp` via Ollama) relies heavily on AVX2 to perform high-speed, vectorized matrix multiplications (GEMM operations) required for LLM prompt evaluation and token generation.
+* **The Fallback Penalty:** Because the AVX2 hardware instructions are physically absent, `llama.cpp` is forced to fall back to legacy, unoptimized scalar math. This causes severe CPU thread contention and exponentially increases the time required to process the context window, regardless of how many cores are allocated.
+
+### Pragmatic Engineering Pivots
+To adapt to this physical constraint while maintaining a local-only architecture, the project supports two operational modes depending on the deployment environment:
+
+1. **High-Fidelity Mode (Current):** Utilizing `phi3.5` or `llama3.1:8b`. This prioritizes strict instruction following and high-quality Markdown generation at the cost of high latency (~600s on legacy silicon).
+2. **High-Speed Edge Mode:** Swapping the generator to a sub-billion parameter model like `qwen2.5:0.5b`. This sacrifices some logical reasoning but massively reduces the memory bandwidth requirement, enabling near real-time REST API responses even on older scalar-bound CPUs.
+
+### Phase 2 Roadmap
+Future iterations will migrate the virtualization stack to modern hardware supporting PCIe Passthrough, allowing a dedicated GPU to handle the matrix math and driving pipeline latency under 5 seconds.
 ---
 
 ## 💻 Quick Start

@@ -10,9 +10,10 @@ from hybrid_search import hybrid_search
 # We only need the heavy hitter now. Dropped temperature to 0.1 for strict factual extraction.
 generator_llm = ChatOllama(
     model="qwen2.5:0.5b", 
-    temperature=0.1,
+    temperature=0.2,
     # THE FIX: Hard-cap the context window so it never bloats memory
-    num_ctx=2048 
+    num_ctx=2048,
+    repeat_penalty=1.2 
 )
 
 # ==========================================
@@ -36,12 +37,13 @@ You are forbidden from guessing, inferring, or using outside knowledge. You MUST
 
 IF THE ANSWER IS IN THE CONTEXT:
 Format your response exactly following these structural rules. DO NOT number your paragraphs.
-- Start with a brief, friendly explanatory paragraph setting the context for your answer. Do NOT start this paragraph with a number. Do NOT use speculative words like "seems", "appears", or "likely". Be definitive and factual.
+- Start directly with a brief, definitive explanatory paragraph. ABSOLUTELY NO introductory filler phrases. Jump straight into the facts.
+- FULL NAVIGATION PATH REQUIRED: If the action occurs inside a sub-module, tool, or specific tab (such as the "Playground" inside "Site Specific View"), you MUST explicitly state the exact location and path the user needs to take.
 - Structure the core of your answer using a clean markdown bulleted list. Break down complex information step-by-step.
 - Follow the bullet points with a brief concluding sentence summarizing the value of this information.
 - NEVER include markdown image syntax like ![](url), HTML tags, or placeholder URLs in your response.
-- DO NOT include reasoning, meta-explanation, or internal thinking. Jump directly to the answer.
-- ALWAYS end with a highly relevant follow-up question to keep the conversation going. Do NOT use the word "could" in your follow-up question (e.g., use "Would you like me to explain...", "Do you need...").
+- DO NOT include reasoning, meta-explanation, or internal thinking. 
+- ALWAYS end with a highly relevant follow-up question to keep the conversation going. Do NOT use the word "could" in your follow-up question.
 
 Answer:"""
 
@@ -53,7 +55,7 @@ def fast_rag_pipeline(query: str, k_docs: int = 4):
     print(f"\n[1/2] Executing Hybrid Retrieval for: '{query}'...")
     
     # THE FIX: Slice the fused array so we don't nuke the CPU's memory bandwidth
-    docs = hybrid_search(query, k=k_docs)[:2] 
+    docs = hybrid_search(query, k=k_docs)[:4] 
     
     if not docs:
         return "I do not have enough information in the current documentation to answer that fully. Could you provide more detail or ask about another specific module?"

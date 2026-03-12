@@ -88,7 +88,7 @@ st.markdown("""
 st.markdown("""
     <div class="dynamic-status-pill">
         <span class="status-dot"></span>
-        Ollama Connected | Qwen 2.5 (0.5B)
+        Ollama Connected | Qwen 2.5:0.5B (CPU-Optimized)
     </div>
 """, unsafe_allow_html=True)
 
@@ -169,18 +169,41 @@ if prompt := st.chat_input("How may I help you today?"):
 
     with bot_container:
         try:
-            # THE FIX: Simplified status box for direct RAG pipeline
-            with st.status("📚 Searching AxIn Documentation...", expanded=True) as status:
-                st.write("Extracting vector embeddings via Qdrant...")
-                status.update(label="✍️ Generating Response...", state="running")
-                
-                # We yield the stream directly into Streamlit's native write_stream function.
-                # It handles the typing effect automatically and returns the final concatenated string.
-                full_response = st.write_stream(stream_rag_pipeline(prompt))
-                
-                status.update(label="✅ Response Ready", state="complete", expanded=False)
+            # 1. The Retrieval Phase (Inside the Status Box)
+            with st.status("Searching AxIn Documentation...", expanded=True) as status:
+                st.write("Extracting vector embeddings...")
+                time.sleep(1) # Adjusted delays so it doesn't drag too long
+                st.write("Querying Qdrant vector database...")
+                time.sleep(1)
+                st.write("Retrieving relevant context...")
+                time.sleep(1)
+                st.write("Context retrieved. Initializing LLM...")
 
-            # Save the final string to session state history
+                # THE FIX: Initialize the generator and force it to compute the FIRST token
+                pipeline_generator = stream_rag_pipeline(prompt)
+                
+                try:
+                    # This line is where the CPU will hang while it thinks. 
+                    # The status box keeps spinning during this!
+                    first_token = next(pipeline_generator)
+                except StopIteration:
+                    first_token = ""
+                
+                # The exact millisecond the first token is born, we close the box
+                status.update(label="Response Generation", state="complete", expanded=False)
+
+            # 2. The Generation Phase (OUTSIDE the Status Box)
+            # We create a tiny wrapper to yield that first token we caught, then the rest
+            def seamless_stream():
+                if first_token:
+                    yield first_token
+                for chunk in pipeline_generator:
+                    yield chunk
+
+            # Streamlit natively streams the rest directly into the UI
+            full_response = st.write_stream(seamless_stream())
+
+            # 3. Save the final string to session state history
             st.session_state.chat_sessions[st.session_state.current_session].append({"role": "assistant", "content": full_response})
 
         except Exception as e:

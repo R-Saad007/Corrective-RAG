@@ -86,24 +86,24 @@ pip install -r requirements.txt
 docker compose up -d
 ```
 **3. Ingest Documents**
-Place your <code>.pdf</code> files in the <code>./docs</code> directory, then run the ingestion script to vectorize the data and build the BM25 index:
+<br></br>Place your <code>.pdf</code> files in the <code>./docs</code> directory, then run the ingestion script to vectorize the data and build the BM25 index:
 ```bash
 python ingest_qdrant.py
 ```
 **4. Run the Production RAG Pipeline**
-Execute the fast, single-pass hybrid search and generation:
+<br></br>Execute the fast, single-pass hybrid search and generation:
 ```bash
 python fast_rag.py
 ```
 **5. (Optional) Run the Corrective Agentic RAG (CRAG) Pipeline**
-If you want to test the LangGraph state machine and watch the dual-model architecture self-correct (evaluate, reject boilerplate, and rewrite queries), run the agentic version.
+<br></br>If you want to test the LangGraph state machine and watch the dual-model architecture self-correct (evaluate, reject boilerplate, and rewrite queries), run the agentic version.
 ```bash
 python agentic_rag.py
 ```
 *Note: This approach demonstrates advanced agentic logic but incurs a significant CPU latency penalty compared to the fast single-pass pipeline.*
 <br></br>
 **6. Launch the Streamlit Frontend (The Production Demo)**
-Execute this command to launch the full pipeline with the real-time chat interface:
+<br></br>Execute this command to launch the full pipeline with the real-time chat interface:
 ```bash
 streamlit run app.py
 ```

@@ -11,6 +11,7 @@ This project implements a sophisticated hybrid search mechanism (Dense + Sparse)
 This system bypasses external API dependencies by running quantized models directly on the host hardware (Ubuntu VM) using Ollama.
 
 * **Layer 1: Inference Engine (Ollama)**
+  * `qwen2.5:0.5b` as the primary production model, hyper-optimized for legacy CPU scalar math and memory bandwidth constraints.
   * `llama3.1:8b` (Q4_0) for complex generation, synthesis, and instruction following.
   * `phi3.5` (3.8B) for lightweight, high-speed routing and query optimization (Phase 1).
   * `nomic-embed-text` for semantic text vectorization.
@@ -20,7 +21,8 @@ This system bypasses external API dependencies by running quantized models direc
   * **Fusion Engine:** Reciprocal Rank Fusion (RRF) algorithm to mathematically merge and re-rank outputs, bypassing the severe latency penalties of CPU-bound Cross-Encoders.
 * **Layer 3: Orchestration & Generation**
   * Custom Python backend utilizing LangChain and strict prompt engineering to force structured, hallucination-free markdown outputs.
-
+* **Layer 4 & 5: Streaming API & Frontend UI**
+  * FastAPI microservice delivering Server-Sent Events (SSE) directly into a native Streamlit chat interface.
 ---
 
 ## ⚖️ Architectural Trade-Offs & Engineering Evolution
@@ -39,7 +41,7 @@ To respect user latency budgets and deliver a snappy product interface, the pipe
 * **The Workflow:** 1. Hybrid Search dynamically widens its net ($k=4$).
   2. RRF instantly fuses the results.
   3. **Context Capping:** The array is strictly sliced to the top 3 chunks to prevent context-window bloat from thrashing the CPU's memory bandwidth during the prompt evaluation phase.
-  4. The context is passed directly to the generator (`llama3.1:8b`).
+  4. The context is passed directly to a lightweight generator (`qwen2.5:0.5b`).
   5. Strict "Anti-Boilerplate" prompt engineering forces the 8B model to act as a simultaneous critic and generator, actively ignoring boilerplate and triggering a zero-hallucination guardrail if the answer is missing.
 * **The Result:** By abandoning multi-step LLM routing and leveraging the speed of RRF combined with prompt-constrained generation, pipeline latency dropped from **~10 minutes to ~30-60 seconds**, while maintaining high accuracy and streaming formatted, actionable insights.
 
@@ -99,6 +101,13 @@ If you want to test the LangGraph state machine and watch the dual-model archite
 python agentic_rag.py
 ```
 *Note: This approach demonstrates advanced agentic logic but incurs a significant CPU latency penalty compared to the fast single-pass pipeline.*
+<br></br>
+**6. Launch the Streamlit Frontend (The Production Demo)**
+Execute this command to launch the full pipeline with the real-time chat interface:
+```bash
+streamlit run app.py
+```
+---
 
 ## 🔌 Layer 4: FastAPI Microservice & Streaming (SSE)
 

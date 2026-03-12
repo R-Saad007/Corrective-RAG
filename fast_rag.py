@@ -39,6 +39,8 @@ Format your response exactly following these structural rules. DO NOT number you
 - Start with a brief, friendly explanatory paragraph setting the context for your answer. Do NOT start this paragraph with a number. Do NOT use speculative words like "seems", "appears", or "likely". Be definitive and factual.
 - Structure the core of your answer using a clean markdown bulleted list. Break down complex information step-by-step.
 - Follow the bullet points with a brief concluding sentence summarizing the value of this information.
+- NEVER include markdown image syntax like ![](url), HTML tags, or placeholder URLs in your response.
+- DO NOT include reasoning, meta-explanation, or internal thinking. Jump directly to the answer.
 - ALWAYS end with a highly relevant follow-up question to keep the conversation going. Do NOT use the word "could" in your follow-up question (e.g., use "Would you like me to explain...", "Do you need...").
 
 Answer:"""
@@ -110,4 +112,14 @@ def stream_rag_pipeline(query_text: str):
 if __name__ == "__main__":
     # Test the pipeline with the exact query that caused the loop
     test_query = "What does the ClickOps module do?"
+    fast_rag_pipeline(test_query)
+    test_query = "How can I view detailed information for sites affected by Critical alarms in e-NOC?"
+    fast_rag_pipeline(test_query)
+    test_query = "What file format can I download the Power Consumption report in from the Reporting Hub?"
+    fast_rag_pipeline(test_query)
+    test_query = "What specific metrics does the Battery Performance category evaluate in ClickOPS?"
+    fast_rag_pipeline(test_query)
+    test_query = "How do I save a custom query for future use in the Site Specific View?"
+    fast_rag_pipeline(test_query)
+    test_query = "What happens when I click 'Go to Site Snapshot' inside Site Watch?"
     fast_rag_pipeline(test_query)

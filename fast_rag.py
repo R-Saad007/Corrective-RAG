@@ -89,7 +89,7 @@ def stream_rag_pipeline(query_text: str):
     """
     print(f"\n[1/2] Executing Hybrid Retrieval for: '{query_text}'...")
     # 1. Retrieve the documents
-    docs = hybrid_search(query_text, k=4)[:2]
+    docs = hybrid_search(query_text, k=4)[:4]
     
     if not docs:
         yield "I do not have enough information in the current documentation to answer that fully. Please provide more detail or ask about another specific module."
